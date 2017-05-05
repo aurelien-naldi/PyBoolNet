@@ -1,9 +1,7 @@
-
 import subprocess
 import os
 import PyBoolNet
 import re
-
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 BASE = os.path.normpath(BASE)
@@ -12,8 +10,6 @@ config.read( os.path.join(BASE, "Dependencies", "settings.cfg") )
 EQNTOTT_CMD = os.path.normpath(os.path.join( BASE, "Dependencies", config.get("Executables", "eqntott") ))
 ESPRESSO_CMD = os.path.normpath(os.path.join( BASE, "Dependencies", config.get("Executables", "espresso") ))
 
-
-
 def _eqntott_error(eqntott, eqntott_out, eqntott_err):
     """
     raises exception for eqntott
@@ -21,10 +17,8 @@ def _eqntott_error(eqntott, eqntott_out, eqntott_err):
     if not (eqntott.returncode == 0):
         print(eqntott_out)
         print(eqntott_err)
-        print('\nCall to "eqntott" resulted in return code %i'%eqntott.returncode)
+        print('\nCall to "eqntott" resulted in return code %i' %eqntott.returncode)
         raise Exception
-
-
 
 def _espresso_error(espresso, espresso_out, espresso_err):
     """
@@ -33,10 +27,8 @@ def _espresso_error(espresso, espresso_out, espresso_err):
     if not (espresso.returncode == 0):
         print(espresso_out)
         print(espresso_err)
-        print('\nCall to "espresso" resulted in return code %i'%espresso.returncode)
+        print('\nCall to "espresso" resulted in return code %i' %espresso.returncode)
         raise Exception
-
-
 
 def run_eqntott(eqntott_cmd, eqntott_in):
     eqntott = subprocess.Popen(eqntott_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -45,16 +37,12 @@ def run_eqntott(eqntott_cmd, eqntott_in):
     _eqntott_error(eqntott, eqntott_out, eqntott_err)
     return(eqntott_out)
 
-
-
 def run_espresso(espresso_cmd, eqntott_out):
     espresso = subprocess.Popen(espresso_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    espresso_out, espresso_err = espresso.communicate(input=eqntott_out.encode())
+    espresso_out, espresso_err = espresso.communicate(input=eqntott_out)
     espresso.stdin.close()
     _espresso_error(espresso, espresso_out, espresso_err)
     return(espresso_out)
-
-
 
 def minimize_espresso(Expression, Outputfile=None, Merge=False, Equiv=False, Exact=False, Reduce=False):
     """
@@ -102,10 +90,6 @@ def minimize_espresso(Expression, Outputfile=None, Merge=False, Equiv=False, Exa
 
     eqntott_cmd = [EQNTOTT_CMD, '-f', '-l']
     espresso_cmd =[ESPRESSO_CMD, '-o', 'eqntott']
-    eqntott_in = None
-    espresso_out = ''
-    PLA_Name = 'Standard Input'
-
     if Merge == True:
         espresso_cmd += ['-Dd1merge']
     if Equiv == True:
@@ -114,12 +98,8 @@ def minimize_espresso(Expression, Outputfile=None, Merge=False, Equiv=False, Exa
         espresso_cmd += ['-Dexact']
     if Reduce == True:
         eqntott_cmd += ['-r']
-
-
-    eqntott_cmd += ['/dev/stdin']
     eqntott_in = Expression
     eqntott_out = run_eqntott(eqntott_cmd, eqntott_in)
-    print eqntott_out
 
     if int(re.search(r'\.p\s\d+', eqntott_out).group().strip(".p ")) != 0:
         espresso_out = run_espresso(espresso_cmd, eqntott_out)
@@ -129,19 +109,14 @@ def minimize_espresso(Expression, Outputfile=None, Merge=False, Equiv=False, Exa
         espresso_out = espresso_out.replace('=', ' = ')
         espresso_out = espresso_out.replace('&', ' & ')
         if espresso_out == "Test = ();":
-            espresso_out = "Test = 1;"
-    elif int(re.search(r'\.p\s\d+', eqntott_out).group().strip(".p ")) == 1:
-        espresso_out = "1"
-    elif int(re.search(r'\.p\s\d+', eqntott_out).group().strip(".p ")) == 0:
-        espresso_out = "0"
+            espresso_out = "1;"
     else:
-        espresso_out = Expression
+        espresso_out = "0"
 
     if (AddName == True and "Test" in str(espresso_out)):
         espresso_out = espresso_out.replace('Test = ', '')
     if (AddColon == True and ";" in str(espresso_out)):
         espresso_out = espresso_out.replace(';', '')
-
     if (Outputfile == None):
         return(espresso_out)
     else:
