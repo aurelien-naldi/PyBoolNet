@@ -98,8 +98,12 @@ def minimize_espresso(Expression, Outputfile=None, Merge=False, Equiv=False, Exa
         espresso_cmd += ['-Dexact']
     if Reduce == True:
         eqntott_cmd += ['-r']
+
+    cwd = os.getcwd()
+    os.chdir(os.path.normpath(os.path.join( BASE, "Dependencies/eqntott/bin")))
     eqntott_in = Expression
     eqntott_out = run_eqntott(eqntott_cmd, eqntott_in)
+    os.chdir(cwd)
 
     if int(re.search(r'\.p\s\d+', eqntott_out).group().strip(".p ")) != 0:
         espresso_out = run_espresso(espresso_cmd, eqntott_out)
